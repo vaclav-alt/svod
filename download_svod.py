@@ -107,3 +107,5 @@ for x in product(pohl, veky, stadia):
 # cursor  = db.cursor()
 # cursor.execute(sql_query, (pohl[0], vekDb(10), stadia[0], kraje[1], "", "", "", 1989, "1", "0", 0.45, 0.34))
 # db.commit()
+if __name__ == "__main__":
+    main()
