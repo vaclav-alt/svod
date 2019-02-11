@@ -84,18 +84,17 @@ def getUrl(options):
 
 def parseSingleYearTable(tables):
     df = tables[0].transpose()
-    # headers = df.iloc[0,:3]
     df = pd.DataFrame(df.values[1:,4:])
     return (df.values[0,0], df.values[0,1])
 
 def main():
-    try:
-        tables = pd.read_html(getUrl(options), skiprows=[3,7])
-        incmort = parseSingleYearTable(tables)
-    except:
-        incmort = (0.0, 0.0)
-        print("ANI HOVNO")
-    print("incidence: %.2f\tmortalita: %.2f" % incmort)
+    # try:
+    #     tables = pd.read_html(getUrl(options), skiprows=[3,7])
+    #     incmort = parseSingleYearTable(tables)
+    # except:
+    #     incmort = (0.0, 0.0)
+    #     print("ANI HOVNO")
+    # print("incidence: %.2f\tmortalita: %.2f" % incmort)
 
 # sql_query = '''insert into incmort (pohlavi, mkn, vek, stadium, region, t, n, m, rok, zije, umrti, inc, mort) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     for x in product(pohl, mkn, veky, stadia, kraje, tnm_t, tnm_n, tnm_m, roky, zije, umrti):
