@@ -23,7 +23,6 @@ def vekDb(i):
     k = (i - 1)*5
     return "v_%d" % k
 
-url = "http://www.svod.cz/graph/?"
 options = {
     "sessid" : "slr1opn84pssncqr5hekcj6d87",
     "typ" : "incmor",
@@ -74,12 +73,14 @@ def getUrlOpts(c):
     }
     return opts
 
-suffix = ""
-for (key, value) in options.items():
-    suffix += key + "=" + value + "&"
+def getUrl(options):
+    url = "http://www.svod.cz/graph/?"
 
-try:
-    tables = pd.read_html(url+suffix, skiprows=[3,7])
+    suffix = ""
+    for (key, value) in options.items():
+        suffix += key + "=" + value + "&"
+    url += suffix
+    return url
 
     df = tables[0].transpose()
     headers = df.iloc[0,:3]
