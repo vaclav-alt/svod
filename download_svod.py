@@ -82,8 +82,11 @@ def getUrl(options):
     url += suffix
     return url
 
+def parseSingleYearTable(tables):
     df = tables[0].transpose()
-    headers = df.iloc[0,:3]
+    # headers = df.iloc[0,:3]
+    df = pd.DataFrame(df.values[1:,4:])
+    return (df.values[0,0], df.values[0,1])
 
     df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
     df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
