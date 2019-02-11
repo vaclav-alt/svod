@@ -78,7 +78,7 @@ def getUrl(options):
 
     suffix = ""
     for (key, value) in options.items():
-        suffix += key + "=" + value + "&"
+        suffix += str(key) + "=" + str(value) + "&"
     url += suffix
     return url
 
