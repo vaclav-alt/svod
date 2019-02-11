@@ -88,20 +88,20 @@ def parseSingleYearTable(tables):
     df = pd.DataFrame(df.values[1:,4:])
     return (df.values[0,0], df.values[0,1])
 
-    df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
-    df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
+def main():
+    try:
+        tables = pd.read_html(getUrl(options), skiprows=[3,7])
+        incmort = parseSingleYearTable(tables)
+    except:
+        incmort = (0.0, 0.0)
+        print("ANI HOVNO")
+    print("incidence: %.2f\tmortalita: %.2f" % incmort)
 
-    df = df1.append(df2).reset_index(drop=True)
-    df[headers[0]] =df[headers[0]].astype(int)
-    df.to_csv("prdel.csv", index=False)
-except:
-    print("ANI HOVNO")
-
-for x in product(pohl, veky, stadia):
-    combo = list(x)
-    combo[1] = vekDb(combo[1])
-    print(combo) 
-    break
+#for x in product(pohl, veky, stadia):
+#    combo = list(x)
+#    combo[1] = vekDb(combo[1])
+#    print(combo) 
+#    break
 
 # db = sq.connect("svod.sqlite")
 # cursor  = db.cursor()
