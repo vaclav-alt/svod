@@ -7,18 +7,24 @@ from itertools import product
 from progress.bar import IncrementalBar
 
 pohl = [ "m", "z"]
-roky = range(1977, 2017)
+#roky = range(1977, 1997)
+roky = range(1997, 2017)
 veky = range(1, 19)
-zije = [0, 1]
-umrti = [0, 1]
-tnm_t = ["0", "1", "2", "3", "4", "A", "S", "X"]
-tnm_n = ["0", "1", "2", "3", "4", "X"]
-tnm_m = ["0", "1", "X"]
+zije = [""]
+umrti = [""]
+# zije = [0, 1]
+# umrti = [0, 1]
+tnm_t = [""]
+tnm_n = [""]
+tnm_m = [""]
+#tnm_t = ["0", "1", "2", "3", "4", "A", "S", "X"]
+#tnm_n = ["0", "1", "2", "3", "4", "X"]
+#tnm_m = ["0", "1", "X"]
 stadia = ["X", "1", "2", "3", "4"]
 #kraje = ["PHA", "STC", "JHC", "PLK", "KVK", "ULK", "LBK", "HKK", "PAK", "OLK", "MSK", "JHM", "ZLK", "VYS"]
-kraje = ["PHA"]
+kraje = [""]
 #mkn = ["C00", "C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C30", "C31", "C32", "C33", "C34", "C37", "C38", "C39", "C40", "C41", "C43", "C44", "C45", "C46", "C47", "C48", "C49", "C50", "C51", "C52", "C53", "C54", "C55", "C56", "C57", "C58", "C60", "C61", "C62", "C63", "C64", "C65", "C66", "C67", "C68", "C69", "C70", "C71", "C72", "C73", "C74", "C75", "C76", "C77", "C78", "C79", "C80", "C81", "C82", "C83", "C84", "C85", "C86", "C88", "C90", "C91", "C92", "C93", "C94", "C95", "C96", "C97", "D03"]
-mkn = ["C00"]
+mkn = ["C01"]
 
 
 sql_query = '''insert into incmort (pohlavi, mkn, vek, stadium, region, t, n, m, rok, zije, umrti, inc, mort) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
@@ -67,22 +73,27 @@ class SvodMaster:
         self._createTable()
 
     def download(self):
-        #bar = IncrementalBar('Downloading', max=self.getTaskCount())
+        i = 1
+        # bar = IncrementalBar('Downloading', max=100)
+        bar = IncrementalBar('Downloading', max=self.getTaskCount())
         for x in product(pohl, mkn, veky, stadia, kraje, tnm_t, tnm_n, tnm_m, roky, zije, umrti):
             url = self._getUrl(self._getUrlOpts(x))
             incmort = self._processUrl(url)
             self._saveToDb(x, incmort)
-        #    bar.next()
-            # break
-        #bar.finish()
+
+            bar.next()
+
+            if (i % 100) == 0:
+                self.db.commit()
+            i += 1
+        bar.finish()
 
     def _processUrl(self, url):
         try:
             tables = pd.read_html(url, skiprows=[3,7])
             incmort = self._parseSingleYearTable(tables)
         except:
-            incmort = (-1.0, -1.0)
-            # print("TED BY TO MELO VRATIT NULL")
+            incmort = (None, None)
         return incmort
 
     def _createTable(self):
@@ -99,7 +110,6 @@ class SvodMaster:
         opts[2] = vekDb(opts[2])
         opts.extend(list(incmort))
         self.c.execute(sql_query, opts)
-        self.db.commit()
         
     def _getUrlOpts(self, c):
         opts = {
@@ -147,13 +157,15 @@ class SvodMaster:
         incmort = self._processUrl(url)
         print(incmort)
 
+
+
     def getTaskCount(self):
         return len(pohl) * len(mkn) * len(veky) * len(stadia) * len(kraje) * len(tnm_t) * len(tnm_n) * len(tnm_m) * len(roky) * len(zije) * len(umrti)
 
 def main():
     svod = SvodMaster("config.ini")
     svod.download()
-    # svod.testOpt(options)
+    #svod.testOpt(options)
     
 if __name__ == "__main__":
     main()
