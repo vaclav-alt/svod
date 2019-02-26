@@ -48,8 +48,8 @@ class SvodMaster:
             #     print(table)
             #     bar.next()
             #     continue
-            opts["vek_od"] = vekDb(opts["vek_od"])
-            opts["vek_do"] = vekDb(opts["vek_do"])
+            opts["vek_od"] = self._vekFormat(opts["vek_od"])
+            opts["vek_do"] = self._vekFormat(opts["vek_do"])
             for index, row in table.iterrows():
                 if isnan(row['Rok']):
                     continue
@@ -61,9 +61,10 @@ class SvodMaster:
             self.db.commit()
 
             bar.next()
-            break
         bar.finish()
 
+    def _vekFormat(self, i):
+        return (int(i) - 1) * 5
     def _composeQuery(self, opts):
         for index, val in opts.items():
             if val == '':
