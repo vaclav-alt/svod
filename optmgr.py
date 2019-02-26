@@ -142,7 +142,7 @@ class OptMaster:
         if s == "":
             return mkn
         for x in self._parseRange(s):
-            mkn.append(pref + str(x))
+            mkn.append("%s%2d" % (pref, int(x)))
         return mkn
 
     def _collectMkn(self):
