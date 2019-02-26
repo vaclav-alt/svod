@@ -18,19 +18,28 @@ class SvodMaster:
     def __init__(self, filename):
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
-        self._initDb()
-        self.opt = OptMaster()
+
+        wd = self._createFolder()
+        copyfile("opts.ini", os.path.join(wd, "opts.ini"))
+        dbpath = os.path.join(wd, self.cfg["database"]["filename"])
+
+        self._initDb(dbpath)
         
+        self.opt = OptMaster()
         self.opt.load()
 
-    def _initDb(self):
-        dbname = self.cfg["database"]["filename"]
-        if (os.path.exists(dbname)):
-                os.remove(dbname)
-        self.db = sq.connect(dbname)
+    def _initDb(self, dbpath):
+        self.db = sq.connect(dbpath)
         self.c = self.db.cursor()
 
         self._createTable()
+
+    def _createFolder(self):
+        mydir = os.path.join(
+            os.getcwd(), 
+            datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        os.makedirs(mydir)
+        return mydir
 
     def download(self):
         bar = IncrementalBar('Downloading', max=self.opt.getTaskCount())
