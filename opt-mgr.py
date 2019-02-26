@@ -1,7 +1,11 @@
 #!/usr/bin/python3
+'''
+Copyright [02/2019] Vaclav Alt, vaclav.alt@mff.cuni.cz
+'''
 
 import configparser 
 import re
+from itertools import product
 
 '''
 pohl = [ "m", "z"]
@@ -59,9 +63,67 @@ class OptMaster:
         self.n.extend(self.cfg["tnm"]["n"].split(','))
         self.m.extend(self.cfg["tnm"]["m"].split(','))
 
-        self.mkn.extend(self._parseMkn(self.cfg["mkn"]["C"], 'C'))
-        self.mkn.extend(self._parseMkn(self.cfg["mkn"]["D"], 'D'))
-        self.mkn.append(self.cfg["mkn"]["special"])
+        self.mkn = self._collectMkn()
+
+    def optIterator(self):
+        return product(self.pohlavi,
+                    self.mkn,
+                    self.vek,
+                    self.stadium,
+                    self.kraje,
+                    self.t,
+                    self.n,
+                    self.m,
+                    self.zije,
+                    self.umrti)
+
+    def getTaskCount(self):
+        return len(self.pohlavi) * \
+                    len(self.mkn) * \
+                    len(self.vek) * \
+                    len(self.stadium) * \
+                    len(self.kraje) * \
+                    len(self.t) * \
+                    len(self.n) * \
+                    len(self.m) * \
+                    len(self.zije) * \
+                    len(self.umrti) 
+
+
+    def _getUrlOpts(self, c):
+        opts = {
+            "sessid" : "slr1opn84pssncqr5hekcj6d87",
+            "typ" : "incmor",
+            "diag" : c[1],
+            "pohl" : c[0],
+            "kraj" : c[4],
+            "vek_od" : c[2],
+            "vek_do" : c[2],
+            "zobrazeni" : "table",
+            "incidence" : "1",
+            "mortalita" : "1",
+            "mi" : "0",
+            "vypocet" : "a",
+            "obdobi_od" : self.yearStart,
+            "obdobi_do" : self.yearEnd,
+            "stadium" : c[3],
+            "t" : c[5],
+            "n" : c[6],
+            "m" : c[7],
+            "zije" : c[8],
+            "umrti" : c[9],
+            "lecba" : ""
+        }
+        return opts
+
+    def _getUrl(self, options):
+        url = "http://www.svod.cz/graph/?"
+
+        suffix = ""
+        for (key, value) in options.items():
+            suffix += str(key) + "=" + str(value) + "&"
+        url += suffix
+        return url
 
     def _parseRange(self, s):
         mkn = []
@@ -77,26 +139,29 @@ class OptMaster:
 
     def _parseMkn(self, s, pref):
         mkn = []
+        if s == "":
+            return mkn
         for x in self._parseRange(s):
             mkn.append(pref + str(x))
         return mkn
 
-
+    def _collectMkn(self):
+        mkn = []
+        mkn.extend(self._parseMkn(self.cfg["mkn"]["C"], 'C'))
+        mkn.extend(self._parseMkn(self.cfg["mkn"]["D"], 'D'))
+        special = self.cfg["mkn"]["special"]
+        if special != "":
+            mkn.append(special)
+        if mkn == []:
+            mkn.append("")
+        return mkn
+        
 def main():
     opt = OptMaster()
     opt.load()
-    print(opt.pohlavi)
-    print(opt.zije)
-    print(opt.umrti)
-    print(opt.kraje)
-    print(opt.stadium)
-    print(opt.yearStart)
-    print(opt.yearEnd)
-    print(opt.vek)
-    print(opt.t)
-    print(opt.n)
-    print(opt.m)
-    print(opt.mkn)
+    for o in opt.optIterator():
+        dic = opt._getUrlOpts(o)
+        print(opt._getUrl(dic))
 
 
 if __name__ == "__main__":

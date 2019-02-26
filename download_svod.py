@@ -3,7 +3,6 @@
 import pandas as pd
 import sqlite3 as sq
 import configparser, os, time
-from itertools import product
 from progress.bar import IncrementalBar
 
 def vekDb(i):
@@ -35,8 +34,6 @@ options = {
 }
 
 class SvodMaster:
-    # TODO(vaclav): SvodMaster should iterate over URLs, which should be handled only by optmgr
-
     def __init__(self, filename):
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
@@ -90,43 +87,6 @@ class SvodMaster:
         opts.extend(list(incmort))
         self.c.execute(sql_query, opts)
         
-    # TODO(vaclav): move to opt-mgr
-    def _getUrlOpts(self, c):
-        opts = {
-            "sessid" : "slr1opn84pssncqr5hekcj6d87",
-            "typ" : "incmor",
-            "diag" : c[1],
-            "pohl" : c[0],
-            "kraj" : c[4],
-            "vek_od" : c[2],
-            "vek_do" : c[2],
-            "zobrazeni" : "table",
-            "incidence" : "1",
-            "mortalita" : "1",
-            "mi" : "0",
-            "vypocet" : "a",
-            "obdobi_od" : c[8],
-            "obdobi_do" : c[8],
-            "stadium" : c[3],
-            "t" : c[5],
-            "n" : c[6],
-            "m" : c[7],
-            "zije" : c[9],
-            "umrti" : c[10],
-            "lecba" : ""
-        }
-        return opts
-
-    # TODO(vaclav): move to opt-mgr
-    def _getUrl(self, options):
-        url = "http://www.svod.cz/graph/?"
-
-        suffix = ""
-        for (key, value) in options.items():
-            suffix += str(key) + "=" + str(value) + "&"
-        url += suffix
-        return url
-
     def _parseSingleYearTable(self, tables):
         df = tables[0].transpose()
         df = pd.DataFrame(df.values[1:,4:])
@@ -137,10 +97,6 @@ class SvodMaster:
         print(url)
         incmort = self._processUrl(url)
         print(incmort)
-
-    # TODO(vaclav): move to opt-mgr
-    def getTaskCount(self):
-        return len(pohl) * len(mkn) * len(veky) * len(stadia) * len(kraje) * len(tnm_t) * len(tnm_n) * len(tnm_m) * len(roky) * len(zije) * len(umrti)
 
 def main():
     svod = SvodMaster("config.ini")
