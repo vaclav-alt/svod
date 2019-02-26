@@ -4,9 +4,13 @@ import pandas as pd
 import sqlite3 as sq
 import configparser, os, time
 from progress.bar import IncrementalBar
+from math import isnan
+import sys
+
+from optmgr import OptMaster
 
 def vekDb(i):
-    k = (i - 1)*5
+    k = (int(i) - 1)*5
     return "v_%d" % k
 
 options = {
@@ -22,7 +26,7 @@ options = {
     "mortalita" : "1",
     "mi" : "0",
     "vypocet" : "a",
-    "obdobi_od" : "2016",
+    "obdobi_od" : "1977",
     "obdobi_do" : "2016",
     "stadium" : "",
     "t" : "",
@@ -38,6 +42,9 @@ class SvodMaster:
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
         self._initDb()
+        self.opt = OptMaster()
+        
+        self.opt.load()
 
     def _initDb(self):
         dbname = self.cfg["database"]["filename"]
@@ -49,20 +56,43 @@ class SvodMaster:
         self._createTable()
 
     def download(self):
-        i = 1
-        # bar = IncrementalBar('Downloading', max=100)
-        bar = IncrementalBar('Downloading', max=self.getTaskCount())
-        for x in product(pohl, mkn, veky, stadia, kraje, tnm_t, tnm_n, tnm_m, roky, zije, umrti):
-            url = self._getUrl(self._getUrlOpts(x))
-            incmort = self._processUrl(url)
-            self._saveToDb(x, incmort)
+        bar = IncrementalBar('Downloading', max=self.opt.getTaskCount())
+        for x in self.opt.optIterator():
+            opts = self.opt._getUrlOpts(x)
+            url = self.opt._getUrl(opts)
+            #print(url)
+            table = self._downloadYearTable(url)
+            # try:
+            #     table = self._downloadYearTable(url)
+            # except Exception as e:
+            #     print(sys.exc_info())
+            #     print("Error at url %s\n" % url)
+            #     print(str(e))
+            #     print(table)
+            #     bar.next()
+            #     continue
+            opts["vek_od"] = vekDb(opts["vek_od"])
+            opts["vek_do"] = vekDb(opts["vek_do"])
+            for index, row in table.iterrows():
+                if isnan(row['Rok']):
+                    continue
+                opts["rok"] = row['Rok']
+                opts["incidence"] = row['Incidence']
+                opts["mortalita"] = row['Mortalita']
+
+                self._saveToDb(opts)
+            self.db.commit()
 
             bar.next()
-
-            if (i % 100) == 0:
-                self.db.commit()
-            i += 1
+            break
         bar.finish()
+
+    def _composeQuery(self, opts):
+        for index, val in opts.items():
+            if val == '':
+                opts[index] = "NULL"
+        sql_query = '''insert into incmort (pohlavi, mkn, vek, stadium, region, t, n, m, rok, zije, umrti, inc, mort) values ('{pohl}', '{diag}', '{vek_do}', '{stadium}', '{kraj}', '{t}', '{n}', '{m}', '{rok}', '{zije}', '{umrti}', '{incidence}', '{mortalita}')'''
+        return (sql_query.format(**opts))
 
     def _processUrl(self, url):
         try:
@@ -81,22 +111,47 @@ class SvodMaster:
         self.c.execute(query)
         self.db.commit()
 
-    def _saveToDb(self, opts, incmort):
-        opts = list(opts)
-        opts[2] = vekDb(opts[2])
-        opts.extend(list(incmort))
-        self.c.execute(sql_query, opts)
-        
+    def _saveToDb(self, opts):
+        sql_query = self._composeQuery(opts)
+        self.c.execute(sql_query)
+
     def _parseSingleYearTable(self, tables):
         df = tables[0].transpose()
         df = pd.DataFrame(df.values[1:,4:])
         return (df.values[0,0], df.values[0,1])
 
-    def testOpt(self, opt):
-        url = self._getUrl(opt)
+    def _downloadYearTable(self, url):
+        tables = pd.read_html(url, skiprows=[3,7])
+        df = tables[0].transpose()
+        headers = df.iloc[0,:3]
+
+        df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
+        df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
+
+        df = df1.append(df2).reset_index(drop=True)
+        return df
+
+    def _processTable(self, table):
+        for index, row in table.iterrows():
+            rowDict = {
+                    "rok" : row['Rok'],
+                    "incidence" : row['Incidence'],
+                    "mortalita" : row['Mortalita']
+                    }
+            print(rowDict)
+
+    def testOpt(self, opts):
+        url = self._getUrl(opts)
         print(url)
-        incmort = self._processUrl(url)
-        print(incmort)
+        table = self._downloadYearTable(url)
+        opts["vek_od"] = vekDb(opts["vek_od"])
+        opts["vek_do"] = vekDb(opts["vek_do"])
+        for index, row in table.iterrows():
+            opts["rok"] = row['Rok']
+            opts["incidence"] = row['Incidence']
+            opts["mortalita"] = row['Mortalita']
+
+            self._saveToDb(opts)
 
 def main():
     svod = SvodMaster("config.ini")
