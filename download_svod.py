@@ -1,41 +1,18 @@
 #!/usr/bin/python3
+'''
+Copyright [02/2019] Vaclav Alt, vaclav.alt@mff.cuni.cz
+'''
 
 import pandas as pd
 import sqlite3 as sq
-import configparser, os, time
+import configparser, os, time, sys
+
 from progress.bar import IncrementalBar
+from datetime import datetime
 from math import isnan
-import sys
+from shutil import copyfile
 
 from optmgr import OptMaster
-
-def vekDb(i):
-    k = (int(i) - 1)*5
-    return "v_%d" % k
-
-options = {
-    "sessid" : "slr1opn84pssncqr5hekcj6d87",
-    "typ" : "incmor",
-    "diag" : "C53",
-    "pohl" : "z",
-    "kraj" : "",
-    "vek_od" : "16",
-    "vek_do" : "16",
-    "zobrazeni" : "table",
-    "incidence" : "1",
-    "mortalita" : "1",
-    "mi" : "0",
-    "vypocet" : "a",
-    "obdobi_od" : "1977",
-    "obdobi_do" : "2016",
-    "stadium" : "",
-    "t" : "",
-    "n" : "",
-    "m" : "",
-    "zije" : "",
-    "umrti" : "",
-    "lecba" : ""
-}
 
 class SvodMaster:
     def __init__(self, filename):
@@ -94,14 +71,6 @@ class SvodMaster:
         sql_query = '''insert into incmort (pohlavi, mkn, vek, stadium, region, t, n, m, rok, zije, umrti, inc, mort) values ('{pohl}', '{diag}', '{vek_do}', '{stadium}', '{kraj}', '{t}', '{n}', '{m}', '{rok}', '{zije}', '{umrti}', '{incidence}', '{mortalita}')'''
         return (sql_query.format(**opts))
 
-    def _processUrl(self, url):
-        try:
-            tables = pd.read_html(url, skiprows=[3,7])
-            incmort = self._parseSingleYearTable(tables)
-        except:
-            incmort = (None, None)
-        return incmort
-
     def _createTable(self):
         query = "create table %s (" % self.cfg["database"]["tablename"]
         query += "id INTEGER PRIMARY KEY"
@@ -140,23 +109,9 @@ class SvodMaster:
                     }
             print(rowDict)
 
-    def testOpt(self, opts):
-        url = self._getUrl(opts)
-        print(url)
-        table = self._downloadYearTable(url)
-        opts["vek_od"] = vekDb(opts["vek_od"])
-        opts["vek_do"] = vekDb(opts["vek_do"])
-        for index, row in table.iterrows():
-            opts["rok"] = row['Rok']
-            opts["incidence"] = row['Incidence']
-            opts["mortalita"] = row['Mortalita']
-
-            self._saveToDb(opts)
-
 def main():
     svod = SvodMaster("config.ini")
     svod.download()
-    #svod.testOpt(options)
     
 if __name__ == "__main__":
     main()
