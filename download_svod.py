@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 '''
-Copyright [02/2019] Vaclav Alt, vaclav.alt@mff.cuni.cz
+Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
 import pandas as pd
