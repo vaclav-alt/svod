@@ -45,6 +45,8 @@ class OptMaster:
         self.n = []
         self.m = []
 
+        self.urlTemplate = self._urlTemplate()
+
     def load(self):
         self.pohlavi.extend(self.cfg["obecne"]["pohlavi"].split(','))
         self.zije.extend(self.cfg["obecne"]["zije"].split(','))
@@ -92,37 +94,47 @@ class OptMaster:
 
     def _getUrlOpts(self, c):
         opts = {
-            "sessid" : "slr1opn84pssncqr5hekcj6d87",
-            "typ" : "incmor",
-            "diag" : c[1],
-            "pohl" : c[0],
-            "kraj" : c[4],
-            "vek_od" : c[2],
-            "vek_do" : c[2],
-            "zobrazeni" : "table",
-            "incidence" : "1",
-            "mortalita" : "1",
-            "mi" : "0",
-            "vypocet" : "a",
-            "obdobi_od" : self.yearStart,
-            "obdobi_do" : self.yearEnd,
-            "stadium" : c[3],
-            "t" : c[5],
-            "n" : c[6],
-            "m" : c[7],
-            "zije" : c[8],
-            "umrti" : c[9],
-            "lecba" : ""
+            "c_mkn" : c[1],
+            "c_gen" : c[0],
+            "c_rgn" : c[4],
+            "c_vek" : c[2],
+            "c_rod" : self.yearStart,
+            "c_rdo" : self.yearEnd,
+            "c_std" : c[3],
+            "c_clt" : c[5],
+            "c_cln" : c[6],
+            "c_clm" : c[7],
+            "c_cnd" : c[8],
+            "c_dth" : c[9],
         }
         return opts
 
     def _getUrl(self, options):
-        url = "http://www.svod.cz/graph/?"
+        return (self.urlTemplate.format(**options))
 
-        suffix = ""
-        for (key, value) in options.items():
-            suffix += str(key) + "=" + str(value) + "&"
-        url += suffix
+    def _urlTemplate(self):
+        url = ("http://www.svod.cz/graph/?"
+                "sessid=slr1opn84pssncqr5hekcj6d87&"
+                "typ=incmor&"
+                "diag={c_mkn}&"
+                "pohl={c_gen}&"
+                "kraj={c_rgn}&"
+                "vek_od={c_vek}&"
+                "vek_do={c_vek}&"
+                "zobrazeni=table&"
+                "incidence=1&"
+                "mortalita=1&"
+                "mi=0&"
+                "vypocet=a&"
+                "obdobi_od={c_rod}&"
+                "obdobi_do={c_rdo}&"
+                "stadium={c_std}&"
+                "t={c_clt}&"
+                "n={c_cln}&"
+                "m={c_clm}&"
+                "zije={c_cnd}&"
+                "umrti={c_dth}&"
+                "lecba=")
         return url
 
     def _parseRange(self, s):

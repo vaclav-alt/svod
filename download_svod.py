@@ -33,6 +33,7 @@ class SvodMaster:
         self.c = self.db.cursor()
 
         self._createTable()
+        self.insertQuery = self._insertQueryTemplate()
 
     def _createFolder(self):
         mydir = os.path.join(
@@ -57,14 +58,13 @@ class SvodMaster:
             #     print(table)
             #     bar.next()
             #     continue
-            opts["vek_od"] = self._vekFormat(opts["vek_od"])
-            opts["vek_do"] = self._vekFormat(opts["vek_do"])
+            opts["c_vek"] = self._vekFormat(opts["c_vek"])
             for index, row in table.iterrows():
                 if isnan(row['Rok']):
                     continue
-                opts["rok"] = row['Rok']
-                opts["incidence"] = row['Incidence']
-                opts["mortalita"] = row['Mortalita']
+                opts["c_rok"] = row['Rok']
+                opts["c_inc"] = row['Incidence']
+                opts["c_mor"] = row['Mortalita']
 
                 self._saveToDb(opts)
             self.db.commit()
@@ -74,12 +74,24 @@ class SvodMaster:
 
     def _vekFormat(self, i):
         return (int(i) - 1) * 5
+
+    def _insertQueryTemplate(self):
+        query = "insert into %s (" % self.cfg["database"]["tablename"]
+        for col in self.cfg.options("database.columns"):
+            query += "%s, " % self.cfg["database.columns"][col]
+        query = query[:-2]
+        query += ") values ("
+        for col in self.cfg.options("database.columns"):
+            query += "'{%s}', " % col
+        query = query[:-2]
+        query += ")"
+        return query
+
     def _composeQuery(self, opts):
         for index, val in opts.items():
             if val == '':
                 opts[index] = "NULL"
-        sql_query = '''insert into incmort (pohlavi, mkn, vek, stadium, region, t, n, m, rok, zije, umrti, inc, mort) values ('{pohl}', '{diag}', '{vek_do}', '{stadium}', '{kraj}', '{t}', '{n}', '{m}', '{rok}', '{zije}', '{umrti}', '{incidence}', '{mortalita}')'''
-        return (sql_query.format(**opts))
+        return (self.insertQuery.format(**opts))
 
     def _createTable(self):
         query = "create table %s (" % self.cfg["database"]["tablename"]
