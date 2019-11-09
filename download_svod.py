@@ -5,6 +5,7 @@ Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 
 import pandas as pd
 import sqlite3 as sq
+import csv
 import configparser, os, time, sys
 
 from progress.bar import IncrementalBar
@@ -19,9 +20,9 @@ class SvodMaster:
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
-        wd = self._createFolder()
-        copyfile("opts.ini", os.path.join(wd, "opts.ini"))
-        dbpath = os.path.join(wd, self.cfg["database"]["filename"])
+        self.wd = self._createFolder()
+        copyfile("opts.ini", os.path.join(self.wd, "opts.ini"))
+        dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
         self._initDb(dbpath)
         
@@ -61,7 +62,20 @@ class SvodMaster:
             self.db.commit()
 
             bar.next()
+        self.writeCsv()
         bar.finish()
+
+    def writeCsv(self):
+        csv_path = os.path.join(self.wd, self.cfg["database"]["csv_filename"])
+
+        sql3_cursor = self.db.cursor()
+        sql3_cursor.execute('SELECT * FROM %s' % self.cfg["database"]["tablename"])
+        with open(csv_path,'w') as out_csv_file:
+            csv_out = csv.writer(out_csv_file)
+            csv_out.writerow([d[0] for d in sql3_cursor.description])
+            for result in sql3_cursor:
+                csv_out.writerow(result)
+
 
     def _changeFormats(self, opts):
         opts["c_vek"] = self._vekFormat(opts["c_vek"])
