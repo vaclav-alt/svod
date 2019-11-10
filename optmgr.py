@@ -22,6 +22,20 @@ mkn = ["C01"]
 
 class OptMaster:
     def __init__(self, filename="opts.ini"):
+        self.opt_names = {
+            "c_mkn" : "diag",
+            "c_gen" : "pohl",
+            "c_rgn" : "kraj",
+            "c_vek" : "vek",
+            "c_rod" : "obdoni_od",
+            "c_rdo" : "obdoni_do",
+            "c_std" : "stadium",
+            "c_clt" : "t",
+            "c_cln" : "n",
+            "c_clm" : "m",
+            "c_cnd" : "zije",
+            "c_dth" : "umrti",
+        }
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
