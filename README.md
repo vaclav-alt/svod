@@ -12,16 +12,21 @@ Tento program stahuje všechna data dle zadaných kritérií a ukládá je do lo
 
 Program je napsán v Python 3, stáhnout zdrojové kódy, nainstalovat potřebné balíčky a program je připraven k použití. Prozatím schází `setup.py` a je tedy nutno instalovat všechny prerekvizity ručně. Jendá se o moduly
 
+- `csv`
 - `progress`
 - `pandas`
 - `sqlite3`
 - `itertools`
 
-Testováno na systémech Ubuntu 16.10, Ubuntu 18.04 a Debian Stretch.
+Testováno na systémech Ubuntu 16.10, Ubuntu 18.04, Debian Stretch a Windows 10.
 
 ## Použití
 
-Chod programu je řízen dvěma konfiguračními soubory: `config.ini` a `opts.ini`. Po spuštění program vytvoří adresář pojmenovaný dle aktuálního data a času (ochrana před nechtěným přemazáním stažených dat). Do toho adresáře zkopíruje vstupní konfigurační soubor `opts.ini` a vytvoří datábázový `*.sqlite` soubor, do kterého pak začne ukládat stahovaná data.
+Chod programu je řízen dvěma konfiguračními soubory: `config.ini` a `opts.ini`. O nich pojednávají příslušné sekce.
+
+Program se spouští skriptem `download_svod.py` (na Windows dvojklikem).Po spuštění program vytvoří adresář pojmenovaný dle aktuálního data a času (ochrana před nechtěným přemazáním stažených dat). Do toho adresáře zkopíruje vstupní konfigurační soubor `opts.ini`. Stažená data se ukládají do SQLite souboru `data.sqlite` a do CSV souboru `data.csv`.
+
+Pokud v průběhu dojde k "očekávané" chybě (SVOD interface nezobrazí data pro některé konfigurace parametrů, často pozorované pro rozsah od roku 1977), program uloží do souboru `errors.csv` aktuální parametry a odkaz na stránku, ze které měla být data stažena (na té stránce bývá typicky slovy formulované shrnutí zvolených parametrů).
 
 ### `config.ini`
 
@@ -29,7 +34,9 @@ Tento soubor slouží ke konfiguraci databáze, konkrétně k pojmenování výs
 
 ```ini
 [database]
-filename	=	svod.sqlite		# název souboru s uloženými daty
+sql_filename	=	data.sqlite		# název souboru s uloženými daty
+csv_filename	=	data.csv		# název souboru s uloženými daty
+eror_filename	=	error.csv		# název souboru s uloženými daty
 tablename	=	incmort			# název SQL tabulky
 
 [database.columns]				# pojmenováni sloupců v tabulce
@@ -156,15 +163,12 @@ Pro konfiguraci používá program stejné kódování věkových skupin jako ro
 Prozatím jsou známy, ale nevyřešeny, následující problémy
 
 - občas program během stahování z neznámých příčin selže. Jde o poměrně vzácný problém, což komplikuje jeho odchycení a nápravu. Většinou stačí program spustit znovu a chyba se pravděpodobně neobjeví.
-- pro některé diagnózy (možná obecně kombinace parametrů) nezobrazuje rozhraní SVOD žádná data, pokud se v rozmezí rok 1977. Pro ostatní roky se data prostě nezobrazí a není tedy co stahovat. Jedná se spíše o chybu na straně SVODu
 - program neumí spolehlivě nakládat s chybami v konfiguračních souborech a jejich správnost nekontroluje. Chyba může vést v lepším případě k ukončení běhu programu, v horším případě ke stažení nesmyslných dat.
 
 ## Výhled
 V nejbližší době lze počítat s následujícími kroky:
 
-- testování na systému Windows
-- zavedení `setup.py`
-- kontrola vstupní konfigurace
+- zavedení `setup.py` pro Linux, Mac OS a Windows
 
 ## Autor
 

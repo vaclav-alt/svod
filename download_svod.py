@@ -5,6 +5,7 @@ Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 
 import pandas as pd
 import sqlite3 as sq
+import csv
 import configparser, os, time, sys
 
 from progress.bar import IncrementalBar
@@ -19,9 +20,9 @@ class SvodMaster:
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
-        wd = self._createFolder()
-        copyfile("opts.ini", os.path.join(wd, "opts.ini"))
-        dbpath = os.path.join(wd, self.cfg["database"]["filename"])
+        self.wd = self._createFolder()
+        copyfile("opts.ini", os.path.join(self.wd, "opts.ini"))
+        dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
         self._initDb(dbpath)
         
@@ -44,36 +45,72 @@ class SvodMaster:
 
     def download(self):
         bar = IncrementalBar('Downloading', max=self.opt.getTaskCount())
-        for x in self.opt.optIterator():
-            opts = self.opt._getUrlOpts(x)
-            url = self.opt._getUrl(opts)
-            #print(url)
-            table = self._downloadYearTable(url)
-            # try:
-            #     table = self._downloadYearTable(url)
-            # except Exception as e:
-            #     print(sys.exc_info())
-            #     print("Error at url %s\n" % url)
-            #     print(str(e))
-            #     print(table)
-            #     bar.next()
-            #     continue
-            opts["c_vek"] = self._vekFormat(opts["c_vek"])
-            for index, row in table.iterrows():
-                if isnan(row['Rok']):
+        error = False
+
+        error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
+        with open(error_path, 'w') as logfile:
+            for x in self.opt.optIterator():
+                opts = self.opt._getUrlOpts(x)
+                url = self.opt._getUrl(opts)
+
+                try:
+                    table = self._downloadYearTable(url)
+                except:
+                    csv_out = csv.writer(logfile)
+                    if not error:
+                        header = list(opts.keys())
+                        for i in range(len(header)):
+                            header[i] = self.opt.opt_names[header[i]]
+                        header.append("url")
+                        csv_out.writerow(header)
+                        error= True
+                    values = list(opts.values())
+                    values.append(url)
+                    csv_out.writerow(values)
                     continue
-                opts["c_rok"] = row['Rok']
-                opts["c_inc"] = row['Incidence']
-                opts["c_mor"] = row['Mortalita']
 
-                self._saveToDb(opts)
-            self.db.commit()
+                self._changeFormats(opts)
+                for index, row in table.iterrows():
+                    if isnan(row['Rok']):
+                        continue
+                    opts["c_rok"] = row['Rok']
+                    opts["c_inc"] = row['Incidence']
+                    opts["c_mor"] = row['Mortalita']
 
-            bar.next()
+                    self._saveToDb(opts)
+                self.db.commit()
+
+                bar.next()
+        self.writeCsv()
         bar.finish()
+        if error:
+            print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
+
+    def writeCsv(self):
+        csv_path = os.path.join(self.wd, self.cfg["database"]["csv_filename"])
+
+        sql3_cursor = self.db.cursor()
+        sql3_cursor.execute('SELECT * FROM %s' % self.cfg["database"]["tablename"])
+        with open(csv_path,'w') as out_csv_file:
+            csv_out = csv.writer(out_csv_file)
+            csv_out.writerow([d[0] for d in sql3_cursor.description])
+            for result in sql3_cursor:
+                csv_out.writerow(result)
+
+    def _changeFormats(self, opts):
+        opts["c_vek"] = self._vekFormat(opts["c_vek"])
+        opts["c_gen"] = self._pohlFormat(opts["c_gen"])
 
     def _vekFormat(self, i):
         return (int(i) - 1) * 5
+
+    def _pohlFormat(self, pohl):
+        if (pohl == "m"):
+            return 1
+        elif (pohl == "z"):
+            return 2
+        else:
+            return "NULL"
 
     def _insertQueryTemplate(self):
         query = "insert into %s (" % self.cfg["database"]["tablename"]
