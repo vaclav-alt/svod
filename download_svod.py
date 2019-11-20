@@ -8,7 +8,6 @@ import sqlite3 as sq
 import csv
 import configparser, os, time, sys
 
-from progress.bar import IncrementalBar
 from datetime import datetime
 from math import isnan
 from shutil import copyfile
@@ -44,12 +43,14 @@ class SvodMaster:
         return mydir
 
     def download(self):
-        bar = IncrementalBar('Downloading', max=self.opt.getTaskCount())
+        task_count = self.opt.getTaskCount()
         error = False
 
         error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
-        with open(error_path, 'w') as logfile:
+        with open(error_path, 'w', newline='') as logfile:
+            i = 1
             for x in self.opt.optIterator():
+                print("Stahování %d/%d..." % (i, task_count), end='')
                 opts = self.opt._getUrlOpts(x)
                 url = self.opt._getUrl(opts)
 
@@ -80,18 +81,21 @@ class SvodMaster:
                     self._saveToDb(opts)
                 self.db.commit()
 
-                bar.next()
+                print("hotovo")
+                i += 1
         self.writeCsv()
-        bar.finish()
         if error:
             print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
 
+        input("Stisknutím klávesy Enter ukončíte chod programu")
+
     def writeCsv(self):
         csv_path = os.path.join(self.wd, self.cfg["database"]["csv_filename"])
+        print("Ukládám %s" % self.cfg["database"]["csv_filename"])
 
         sql3_cursor = self.db.cursor()
         sql3_cursor.execute('SELECT * FROM %s' % self.cfg["database"]["tablename"])
-        with open(csv_path,'w') as out_csv_file:
+        with open(csv_path,'w', newline='') as out_csv_file:
             csv_out = csv.writer(out_csv_file)
             csv_out.writerow([d[0] for d in sql3_cursor.description])
             for result in sql3_cursor:
