@@ -10,10 +10,9 @@ Tento program stahuje všechna data dle zadaných kritérií a ukládá je do lo
 
 ## Instalace
 
-Program je napsán v Python 3, stáhnout zdrojové kódy, nainstalovat potřebné balíčky a program je připraven k použití. Prozatím schází `setup.py` a je tedy nutno instalovat všechny prerekvizity ručně. Jendá se o moduly
+Program je napsán v Python 3. Stačí stáhnout zdrojové kódy, nainstalovat potřebné balíčky a program je připraven k použití. Prozatím schází `setup.py` či `requirements.txt` a je tedy nutno instalovat všechny prerekvizity ručně. Jedná se o moduly
 
 - `csv`
-- `progress`
 - `pandas`
 - `sqlite3`
 - `itertools`
