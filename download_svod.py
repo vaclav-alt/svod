@@ -1,16 +1,16 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 '''
-Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
+Copyright [08/2023] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
-import pandas as pd
-import sqlite3 as sq
+import configparser
 import csv
-import configparser, os, time, sys
-
+import os
 from datetime import datetime
 from math import isnan
 from shutil import copyfile
+
+import pandas as pd
 
 from optmgr import OptMaster
 from db import Database
@@ -117,6 +117,15 @@ class SvodMaster:
                     "mortalita" : row['Mortalita']
                     }
             print(rowDict)
+
+
+def create_folder():
+    mydir = os.path.join(
+        os.getcwd(),
+        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    os.makedirs(mydir)
+    return mydir
+
 
 def main():
     svod = SvodMaster("config.ini")
