@@ -100,7 +100,7 @@ class SvodMaster:
         return (df.values[0,0], df.values[0,1])
 
     def _downloadYearTable(self, url):
-        tables = pd.read_html(url, skiprows=[3,7])
+        tables = pd.read_html(url, skiprows=[3,7], encoding='Windows-1252')
         df = tables[0].transpose()
         headers = df.iloc[0,:3]
 
