@@ -13,34 +13,23 @@ from math import isnan
 from shutil import copyfile
 
 from optmgr import OptMaster
+from db import Database
+
 
 class SvodMaster:
     def __init__(self, filename):
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
-        self.wd = self._createFolder()
+        self.wd = create_folder()
         copyfile("opts.ini", os.path.join(self.wd, "opts.ini"))
         dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
-        self._initDb(dbpath)
-        
+        c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
+        self.db = Database(dbpath, c, c["database"]["tablename"])
+
         self.opt = OptMaster()
         self.opt.load()
-
-    def _initDb(self, dbpath):
-        self.db = sq.connect(dbpath)
-        self.c = self.db.cursor()
-
-        self._createTable()
-        self.insertQuery = self._insertQueryTemplate()
-
-    def _createFolder(self):
-        mydir = os.path.join(
-            os.getcwd(), 
-            datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-        os.makedirs(mydir)
-        return mydir
 
     def download(self):
         task_count = self.opt.getTaskCount()
@@ -78,28 +67,17 @@ class SvodMaster:
                     opts["c_inc"] = row['Incidence']
                     opts["c_mor"] = row['Mortalita']
 
-                    self._saveToDb(opts)
-                self.db.commit()
+                    self.db.save_to_db(opts)
+                self.db.db.commit()
 
                 print("hotovo")
                 i += 1
-        self.writeCsv()
+        self.db.write_csv(self.cfg["database"]["csv_filename"])
         if error:
             print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
 
         input("Stisknutím klávesy Enter ukončíte chod programu")
 
-    def writeCsv(self):
-        csv_path = os.path.join(self.wd, self.cfg["database"]["csv_filename"])
-        print("Ukládám %s" % self.cfg["database"]["csv_filename"])
-
-        sql3_cursor = self.db.cursor()
-        sql3_cursor.execute('SELECT * FROM %s' % self.cfg["database"]["tablename"])
-        with open(csv_path,'w', newline='') as out_csv_file:
-            csv_out = csv.writer(out_csv_file)
-            csv_out.writerow([d[0] for d in sql3_cursor.description])
-            for result in sql3_cursor:
-                csv_out.writerow(result)
 
     def _changeFormats(self, opts):
         opts["c_vek"] = self._vekFormat(opts["c_vek"])
@@ -115,37 +93,6 @@ class SvodMaster:
             return 2
         else:
             return "NULL"
-
-    def _insertQueryTemplate(self):
-        query = "insert into %s (" % self.cfg["database"]["tablename"]
-        for col in self.cfg.options("database.columns"):
-            query += "%s, " % self.cfg["database.columns"][col]
-        query = query[:-2]
-        query += ") values ("
-        for col in self.cfg.options("database.columns"):
-            query += "'{%s}', " % col
-        query = query[:-2]
-        query += ")"
-        return query
-
-    def _composeQuery(self, opts):
-        for index, val in opts.items():
-            if val == '':
-                opts[index] = "NULL"
-        return (self.insertQuery.format(**opts))
-
-    def _createTable(self):
-        query = "create table %s (" % self.cfg["database"]["tablename"]
-        query += "id INTEGER PRIMARY KEY"
-        for col in self.cfg.options("database.columns"):
-            query += ", %s %s" % (self.cfg["database.columns"][col], self.cfg["database.types"][col])
-        query += ")"
-        self.c.execute(query)
-        self.db.commit()
-
-    def _saveToDb(self, opts):
-        sql_query = self._composeQuery(opts)
-        self.c.execute(sql_query)
 
     def _parseSingleYearTable(self, tables):
         df = tables[0].transpose()
@@ -174,6 +121,7 @@ class SvodMaster:
 def main():
     svod = SvodMaster("config.ini")
     svod.download()
-    
+
+
 if __name__ == "__main__":
     main()
