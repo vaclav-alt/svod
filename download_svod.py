@@ -160,8 +160,7 @@ class SvodMaster:
         df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
         df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
 
-        df = df1.append(df2).reset_index(drop=True)
-        return df
+        return pd.concat([df1, df2]).reset_index(drop=True)
 
     def _processTable(self, table):
         for index, row in table.iterrows():
