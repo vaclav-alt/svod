@@ -12,7 +12,7 @@ from shutil import copyfile
 
 import pandas as pd
 
-from optmgr import OptMaster
+from svod.optmgr import OptMaster
 from db import Database
 
 
@@ -22,7 +22,7 @@ class SvodMaster:
         self.cfg.read(filename)
 
         self.wd = create_folder()
-        copyfile("opts.ini", os.path.join(self.wd, "opts.ini"))
+        copyfile("cfg/opts.ini", os.path.join(self.wd, "svod/cfg/opts.ini"))
         dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
         c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
@@ -128,7 +128,7 @@ def create_folder():
 
 
 def main():
-    svod = SvodMaster("config.ini")
+    svod = SvodMaster("cfg/config.ini")
     svod.download()
 
 
