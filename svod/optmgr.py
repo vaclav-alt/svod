@@ -1,8 +1,8 @@
-#!/usr/bin/python3
 '''
 Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
+from pathlib import Path
 import configparser 
 import re
 from itertools import product
@@ -20,22 +20,33 @@ kraje = ["PHA", "STC", "JHC", "PLK", "KVK", "ULK", "LBK", "HKK", "PAK", "OLK", "
 mkn = ["C01"]
 '''
 
+
+def parse_range(s: str) -> list[int]:
+    numbers = []
+    tokens = s.split(',')
+
+    if s.strip() == "":
+        return numbers
+
+    for entry in tokens:
+        entry = entry.strip()
+        if re.search(r"^\d+-\d+$", entry):
+            a, b = entry.split("-")
+            for x in range(int(a), int(b)+1):
+                numbers.append(x)
+        else:
+            numbers.append(int(entry))
+    return numbers
+
+
+def parse_mkn(s, prefix):
+    return [f"{prefix}{num:02d}" for num in parse_range(s)]
+
+
 class OptMaster:
-    def __init__(self, filename="opts.ini"):
-        self.opt_names = {
-            "c_mkn" : "diag",
-            "c_gen" : "pohl",
-            "c_rgn" : "kraj",
-            "c_vek" : "vek",
-            "c_rod" : "obdoni_od",
-            "c_rdo" : "obdoni_do",
-            "c_std" : "stadium",
-            "c_clt" : "t",
-            "c_cln" : "n",
-            "c_clm" : "m",
-            "c_cnd" : "zije",
-            "c_dth" : "umrti",
-        }
+    def __init__(self, filename: str | Path = None):
+        if filename is None:
+            filename = Path(__file__).parent / "cfg" / "opts.ini"
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
@@ -151,45 +162,13 @@ class OptMaster:
                 "lecba=")
         return url
 
-    def _parseRange(self, s):
-        mkn = []
-        for d in s.split(','):
-            if re.search("\d+[-]{1}\d+", d):
-                a = int(re.search("^\d+", d).group(0))
-                b = int(re.search("\d+$", d).group(0))
-                for x in range(a,b+1):
-                    mkn.append(x)
-            else:
-                mkn.append(d)
-        return mkn
-
-    def _parseMkn(self, s, pref):
-        mkn = []
-        if s == "":
-            return mkn
-        for x in self._parseRange(s):
-            mkn.append("%s%02d" % (pref, int(x)))
-        return mkn
-
     def _collectMkn(self):
         mkn = []
-        mkn.extend(self._parseMkn(self.cfg["mkn"]["C"], 'C'))
-        mkn.extend(self._parseMkn(self.cfg["mkn"]["D"], 'D'))
+        mkn.extend(parse_mkn(self.cfg["mkn"]["C"], 'C'))
+        mkn.extend(parse_mkn(self.cfg["mkn"]["D"], 'D'))
         special = self.cfg["mkn"]["special"]
         if special != "":
             mkn.append(special)
         if mkn == []:
             mkn.append("")
         return mkn
-        
-def main():
-    opt = OptMaster()
-    opt.load()
-    for o in opt.optIterator():
-        dic = opt._getUrlOpts(o)
-        print(opt._getUrl(dic))
-
-
-if __name__ == "__main__":
-    main()
-
