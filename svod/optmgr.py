@@ -3,7 +3,7 @@ Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
 from pathlib import Path
-import configparser 
+import configparser
 import re
 from itertools import product
 
@@ -32,7 +32,7 @@ def parse_range(s: str) -> list[int]:
         entry = entry.strip()
         if re.search(r"^\d+-\d+$", entry):
             a, b = entry.split("-")
-            for x in range(int(a), int(b)+1):
+            for x in range(int(a), int(b) + 1):
                 numbers.append(x)
         else:
             numbers.append(int(entry))
@@ -44,6 +44,30 @@ def parse_mkn(s, prefix):
 
 
 class OptMaster:
+    url_tmpl = (
+        "http://www.svod.cz/graph/?"
+        "sessid=slr1opn84pssncqr5hekcj6d87&"
+        "typ=incmor&"
+        "diag={c_mkn}&"
+        "pohl={c_gen}&"
+        "kraj={c_rgn}&"
+        "vek_od={c_vek}&"
+        "vek_do={c_vek}&"
+        "zobrazeni=table&"
+        "incidence=1&"
+        "mortalita=1&"
+        "mi=0&"
+        "vypocet=a&"
+        "obdobi_od={c_rod}&"
+        "obdobi_do={c_rdo}&"
+        "stadium={c_std}&"
+        "t={c_clt}&"
+        "n={c_cln}&"
+        "m={c_clm}&"
+        "zije={c_cnd}&"
+        "umrti={c_dth}&"
+        "lecba="
+    )
     def __init__(self, filename: str | Path = None):
         if filename is None:
             filename = Path(__file__).parent / "cfg" / "opts.ini"
@@ -70,7 +94,6 @@ class OptMaster:
         self.n = []
         self.m = []
 
-        self.urlTemplate = self._urlTemplate()
 
     def load(self):
         self.pohlavi.extend(self.cfg["obecne"]["pohlavi"].split(','))
@@ -84,7 +107,7 @@ class OptMaster:
 
         a = int(self.cfg["vek"]["start"])
         b = int(self.cfg["vek"]["end"])
-        self.vek = list(range(a, b+1))
+        self.vek = list(range(a, b + 1))
 
         self.t.extend(self.cfg["tnm"]["t"].split(','))
         self.n.extend(self.cfg["tnm"]["n"].split(','))
@@ -94,73 +117,47 @@ class OptMaster:
 
     def optIterator(self):
         return product(self.pohlavi,
-                    self.mkn,
-                    self.vek,
-                    self.stadium,
-                    self.kraje,
-                    self.t,
-                    self.n,
-                    self.m,
-                    self.zije,
-                    self.umrti)
+                       self.mkn,
+                       self.vek,
+                       self.stadium,
+                       self.kraje,
+                       self.t,
+                       self.n,
+                       self.m,
+                       self.zije,
+                       self.umrti)
 
     def getTaskCount(self):
         return len(self.pohlavi) * \
-                    len(self.mkn) * \
-                    len(self.vek) * \
-                    len(self.stadium) * \
-                    len(self.kraje) * \
-                    len(self.t) * \
-                    len(self.n) * \
-                    len(self.m) * \
-                    len(self.zije) * \
-                    len(self.umrti) 
-
+               len(self.mkn) * \
+               len(self.vek) * \
+               len(self.stadium) * \
+               len(self.kraje) * \
+               len(self.t) * \
+               len(self.n) * \
+               len(self.m) * \
+               len(self.zije) * \
+               len(self.umrti)
 
     def _getUrlOpts(self, c):
         opts = {
-            "c_mkn" : c[1],
-            "c_gen" : c[0],
-            "c_rgn" : c[4],
-            "c_vek" : c[2],
-            "c_rod" : self.yearStart,
-            "c_rdo" : self.yearEnd,
-            "c_std" : c[3],
-            "c_clt" : c[5],
-            "c_cln" : c[6],
-            "c_clm" : c[7],
-            "c_cnd" : c[8],
-            "c_dth" : c[9],
+            "c_mkn": c[1],
+            "c_gen": c[0],
+            "c_rgn": c[4],
+            "c_vek": c[2],
+            "c_rod": self.yearStart,
+            "c_rdo": self.yearEnd,
+            "c_std": c[3],
+            "c_clt": c[5],
+            "c_cln": c[6],
+            "c_clm": c[7],
+            "c_cnd": c[8],
+            "c_dth": c[9],
         }
         return opts
 
-    def _getUrl(self, options):
-        return (self.urlTemplate.format(**options))
-
-    def _urlTemplate(self):
-        url = ("http://www.svod.cz/graph/?"
-                "sessid=slr1opn84pssncqr5hekcj6d87&"
-                "typ=incmor&"
-                "diag={c_mkn}&"
-                "pohl={c_gen}&"
-                "kraj={c_rgn}&"
-                "vek_od={c_vek}&"
-                "vek_do={c_vek}&"
-                "zobrazeni=table&"
-                "incidence=1&"
-                "mortalita=1&"
-                "mi=0&"
-                "vypocet=a&"
-                "obdobi_od={c_rod}&"
-                "obdobi_do={c_rdo}&"
-                "stadium={c_std}&"
-                "t={c_clt}&"
-                "n={c_cln}&"
-                "m={c_clm}&"
-                "zije={c_cnd}&"
-                "umrti={c_dth}&"
-                "lecba=")
-        return url
+    def _getUrl(self, options: dict) -> str:
+        return self.url_tmpl.format(**options)
 
     def _collectMkn(self):
         mkn = []
