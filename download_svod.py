@@ -32,7 +32,7 @@ class SvodMaster:
         self.opt.load()
 
     def download(self):
-        task_count = self.opt.getTaskCount()
+        task_count = len(self.opt)
         error = False
 
         error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
@@ -41,25 +41,23 @@ class SvodMaster:
             for x in self.opt.optIterator():
                 print("Stahování %d/%d..." % (i, task_count), end='')
                 opts = self.opt._getUrlOpts(x)
-                url = self.opt._getUrl(opts)
+                url = self.opt.get_url(opts)
 
                 try:
                     table = self._downloadYearTable(url)
-                except:
+                except ValueError as e:
                     csv_out = csv.writer(logfile)
                     if not error:
-                        header = list(opts.keys())
-                        for i in range(len(header)):
-                            header[i] = self.opt.opt_names[header[i]]
+                        header = [self.opt.opt_names[key] for key in opts]
                         header.append("url")
                         csv_out.writerow(header)
-                        error= True
+                        error = True
                     values = list(opts.values())
                     values.append(url)
                     csv_out.writerow(values)
                     continue
 
-                self._changeFormats(opts)
+                self._convert_values(opts)
                 for index, row in table.iterrows():
                     if isnan(row['Rok']):
                         continue
@@ -68,44 +66,31 @@ class SvodMaster:
                     opts["c_mor"] = row['Mortalita']
 
                     self.db.save_to_db(opts)
-                self.db.db.commit()
+                self.db.commit()
 
                 print("hotovo")
                 i += 1
-        self.db.write_csv(self.cfg["database"]["csv_filename"])
+        # self.db.write_csv(os.path.join(self.wd, self.cfg["database"]["csv_filename"]))
         if error:
             print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
 
         input("Stisknutím klávesy Enter ukončíte chod programu")
 
 
-    def _changeFormats(self, opts):
-        opts["c_vek"] = self._vekFormat(opts["c_vek"])
-        opts["c_gen"] = self._pohlFormat(opts["c_gen"])
+    def _convert_values(self, opts):
+        opts["c_vek"] = agegroup_from_index(opts["c_vek"])
+        opts["c_gen"] = convert_gender(opts["c_gen"])
 
-    def _vekFormat(self, i):
-        return (int(i) - 1) * 5
-
-    def _pohlFormat(self, pohl):
-        if (pohl == "m"):
-            return 1
-        elif (pohl == "z"):
-            return 2
-        else:
-            return "NULL"
-
-    def _parseSingleYearTable(self, tables):
+    def _downloadYearTable(self, url: str) -> pd.DataFrame:
+        tables = pd.read_html(url, encoding='Windows-1252')
+        # tables = pd.read_html(url, skiprows=[3, 7], encoding='Windows-1252')
         df = tables[0].transpose()
-        df = pd.DataFrame(df.values[1:,4:])
-        return (df.values[0,0], df.values[0,1])
+        headers = df.iloc[0, :3]
+        print(df)
+        print(headers)
 
-    def _downloadYearTable(self, url):
-        tables = pd.read_html(url, skiprows=[3,7], encoding='Windows-1252')
-        df = tables[0].transpose()
-        headers = df.iloc[0,:3]
-
-        df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
-        df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
+        df1 = pd.DataFrame(df.values[1:, :3], columns=headers)
+        df2 = pd.DataFrame(df.values[1:, 4:-1], columns=headers)
 
         return pd.concat([df1, df2]).reset_index(drop=True)
 
@@ -117,6 +102,19 @@ class SvodMaster:
                     "mortalita" : row['Mortalita']
                     }
             print(rowDict)
+
+
+def convert_gender(pohl):
+    if pohl == "m":
+        return 1
+    elif pohl == "z":
+        return 2
+    else:
+        return None
+
+
+def agegroup_from_index(i) -> int:
+    return (int(i) - 1) * 5
 
 
 def create_folder():

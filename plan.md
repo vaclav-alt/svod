@@ -1,0 +1,4 @@
+- sys args interface, pripadne nejaky pokrocilejsi cli
+- zobecnit uloziste - csv, sql, R dataframe?
+- plnohodnotny logging
+- async a nejaka async fronta pro zapis

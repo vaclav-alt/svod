@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 '''
-Copyright [02/2019] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
+Copyright [08/2023] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
 import configparser 
@@ -20,21 +20,60 @@ kraje = ["PHA", "STC", "JHC", "PLK", "KVK", "ULK", "LBK", "HKK", "PAK", "OLK", "
 mkn = ["C01"]
 '''
 
+url = (
+    "http://www.svod.cz/graph/?"
+    "sessid=slr1opn84pssncqr5hekcj6d87&"
+    "typ=incmor&"
+    "diag={c_mkn}&"
+    "pohl={c_gen}&"
+    "kraj={c_rgn}&"
+    "vek_od={c_vek}&"
+    "vek_do={c_vek}&"
+    "zobrazeni=table&"
+    "incidence=1&"
+    "mortalita=1&"
+    "mi=0&"
+    "vypocet=a&"
+    "obdobi_od={c_rod}&"
+    "obdobi_do={c_rdo}&"
+    "stadium={c_std}&"
+    "t={c_clt}&"
+    "n={c_cln}&"
+    "m={c_clm}&"
+    "zije={c_cnd}&"
+    "umrti={c_dth}&"
+    "lecba="
+)
+
+
+def parse_ranges(s: str) -> list[int]:
+    ranges = []
+    for r in s.split(','):
+        if re.search("\d+[-]{1}\d+", r):
+            a = int(re.search("^\d+", r).group(0))
+            b = int(re.search("\d+$", r).group(0))
+            for x in range(a, b + 1):
+                ranges.append(x)
+        else:
+            ranges.append(r)
+    return ranges
+
+
 class OptMaster:
     def __init__(self, filename="opts.ini"):
         self.opt_names = {
-            "c_mkn" : "diag",
-            "c_gen" : "pohl",
-            "c_rgn" : "kraj",
-            "c_vek" : "vek",
-            "c_rod" : "obdoni_od",
-            "c_rdo" : "obdoni_do",
-            "c_std" : "stadium",
-            "c_clt" : "t",
-            "c_cln" : "n",
-            "c_clm" : "m",
-            "c_cnd" : "zije",
-            "c_dth" : "umrti",
+            "c_mkn": "diag",
+            "c_gen": "pohl",
+            "c_rgn": "kraj",
+            "c_vek": "vek",
+            "c_rod": "obdoni_od",
+            "c_rdo": "obdoni_do",
+            "c_std": "stadium",
+            "c_clt": "t",
+            "c_cln": "n",
+            "c_clm": "m",
+            "c_cnd": "zije",
+            "c_dth": "umrti",
         }
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
@@ -58,8 +97,6 @@ class OptMaster:
         self.t = []
         self.n = []
         self.m = []
-
-        self.urlTemplate = self._urlTemplate()
 
     def load(self):
         self.pohlavi.extend(self.cfg["obecne"]["pohlavi"].split(','))
@@ -93,9 +130,9 @@ class OptMaster:
                     self.zije,
                     self.umrti)
 
-    def getTaskCount(self):
+    def __len__(self) -> int:
         return len(self.pohlavi) * \
-                    len(self.mkn) * \
+            len(self.mkn) * \
                     len(self.vek) * \
                     len(self.stadium) * \
                     len(self.kraje) * \
@@ -103,7 +140,8 @@ class OptMaster:
                     len(self.n) * \
                     len(self.m) * \
                     len(self.zije) * \
-                    len(self.umrti) 
+                    len(self.umrti)
+
 
 
     def _getUrlOpts(self, c):
@@ -123,51 +161,14 @@ class OptMaster:
         }
         return opts
 
-    def _getUrl(self, options):
-        return (self.urlTemplate.format(**options))
-
-    def _urlTemplate(self):
-        url = ("http://www.svod.cz/graph/?"
-                "sessid=slr1opn84pssncqr5hekcj6d87&"
-                "typ=incmor&"
-                "diag={c_mkn}&"
-                "pohl={c_gen}&"
-                "kraj={c_rgn}&"
-                "vek_od={c_vek}&"
-                "vek_do={c_vek}&"
-                "zobrazeni=table&"
-                "incidence=1&"
-                "mortalita=1&"
-                "mi=0&"
-                "vypocet=a&"
-                "obdobi_od={c_rod}&"
-                "obdobi_do={c_rdo}&"
-                "stadium={c_std}&"
-                "t={c_clt}&"
-                "n={c_cln}&"
-                "m={c_clm}&"
-                "zije={c_cnd}&"
-                "umrti={c_dth}&"
-                "lecba=")
-        return url
-
-    def _parseRange(self, s):
-        mkn = []
-        for d in s.split(','):
-            if re.search("\d+[-]{1}\d+", d):
-                a = int(re.search("^\d+", d).group(0))
-                b = int(re.search("\d+$", d).group(0))
-                for x in range(a,b+1):
-                    mkn.append(x)
-            else:
-                mkn.append(d)
-        return mkn
+    def get_url(self, options: dict) -> str:
+        return url.format(**options)
 
     def _parseMkn(self, s, pref):
         mkn = []
         if s == "":
             return mkn
-        for x in self._parseRange(s):
+        for x in parse_ranges(s):
             mkn.append("%s%02d" % (pref, int(x)))
         return mkn
 
@@ -181,15 +182,3 @@ class OptMaster:
         if mkn == []:
             mkn.append("")
         return mkn
-        
-def main():
-    opt = OptMaster()
-    opt.load()
-    for o in opt.optIterator():
-        dic = opt._getUrlOpts(o)
-        print(opt._getUrl(dic))
-
-
-if __name__ == "__main__":
-    main()
-

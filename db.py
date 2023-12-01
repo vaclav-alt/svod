@@ -26,20 +26,13 @@ class Database:
     def insert_query_template(self) -> str:
         columns = ", ".join(self.cfg["database.columns"].values())
         value_keys = ", ".join(
-            f"'{{{key}}}'" for key in self.cfg["database.columns"].keys()
-    )
+            f":{key}" for key in self.cfg["database.columns"].keys()
+        )
         query = f"insert into {self.tablename} ({columns}) values ({value_keys})"
         return query
 
-    def compose_query(self, opts) -> str:
-        for index, val in opts.items():
-            if val == '':
-                opts[index] = "NULL"
-        return self.insertQuery.format(**opts)
-
     def create_table(self):
-        query = f"create table {self.tablename} ("
-        query += "id INTEGER PRIMARY KEY"
+        query = f"create table {self.tablename} (id INTEGER PRIMARY KEY"
         for key, val in self.cfg["database.columns"].items():
             coltype = self.cfg["database.types"][key]
             query += f", {val} {coltype}"
@@ -47,6 +40,11 @@ class Database:
         self.c.execute(query)
         self.db.commit()
 
+    def commit(self) -> None:
+        self.db.commit()
+
     def save_to_db(self, opts):
-        sql_query = self.compose_query(opts)
-        self.c.execute(sql_query)
+        for index, val in opts.items():
+            if val == '':
+                opts[index] = "NULL"
+        self.c.execute(self.insertQuery, opts)
