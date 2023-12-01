@@ -43,6 +43,20 @@ def parse_mkn(s, prefix):
     return [f"{prefix}{num:02d}" for num in parse_range(s)]
 
 
+def collect_mkn(c_inp: str, d_inp: str, spec_inp: str) -> list[str]:
+    mkn = []
+    mkn += [f"C{num:02d}" for num in parse_range(c_inp)]
+    mkn += [f"D{num:02d}" for num in parse_range(d_inp)]
+    special = spec_inp
+
+    if special:
+        mkn.append(special)
+
+    if not mkn:
+        mkn.append("")
+    return mkn
+
+
 class OptMaster:
     url_tmpl = (
         "http://www.svod.cz/graph/?"
@@ -94,7 +108,6 @@ class OptMaster:
         self.n = []
         self.m = []
 
-
     def load(self):
         self.pohlavi.extend(self.cfg["obecne"]["pohlavi"].split(','))
         self.zije.extend(self.cfg["obecne"]["zije"].split(','))
@@ -113,7 +126,7 @@ class OptMaster:
         self.n.extend(self.cfg["tnm"]["n"].split(','))
         self.m.extend(self.cfg["tnm"]["m"].split(','))
 
-        self.mkn = self._collectMkn()
+        self.mkn = collect_mkn(self.cfg["mkn"]["C"], self.cfg["mkn"]["D"], self.cfg["mkn"]["special"])
 
     def optIterator(self):
         return product(self.pohlavi,
@@ -159,13 +172,3 @@ class OptMaster:
     def _getUrl(self, options: dict) -> str:
         return self.url_tmpl.format(**options)
 
-    def _collectMkn(self):
-        mkn = []
-        mkn.extend(parse_mkn(self.cfg["mkn"]["C"], 'C'))
-        mkn.extend(parse_mkn(self.cfg["mkn"]["D"], 'D'))
-        special = self.cfg["mkn"]["special"]
-        if special != "":
-            mkn.append(special)
-        if mkn == []:
-            mkn.append("")
-        return mkn
