@@ -57,118 +57,78 @@ def collect_mkn(c_inp: str, d_inp: str, spec_inp: str) -> list[str]:
     return mkn
 
 
+urlmap = {
+    "c_gen": "pohl",
+    "c_mkn": "diag",
+    # "c_vek": "vek",
+    "c_vod": "vek_od",
+    "c_vdo": "vek_do",
+    "c_std": "stadium",
+    "c_rgn": "kraj",
+    "c_clt": "t",
+    "c_cln": "n",
+    "c_clm": "m",
+    "c_rok": "rok",
+    "c_cnd": "zije",
+    "c_dth": "umrti",
+    "c_inc": "inc",
+    "c_mor": "mort",
+    "c_rod": "obdobi_od",
+    "c_rdo": "obdobi_do",
+}
+
+
 class OptMaster:
-    url_tmpl = (
-        "http://www.svod.cz/graph/?"
-        "sessid=slr1opn84pssncqr5hekcj6d87&"
-        "typ=incmor&"
-        "diag={c_mkn}&"
-        "pohl={c_gen}&"
-        "kraj={c_rgn}&"
-        "vek_od={c_vek}&"
-        "vek_do={c_vek}&"
-        "zobrazeni=table&"
-        "incidence=1&"
-        "mortalita=1&"
-        "mi=0&"
-        "vypocet=a&"
-        "obdobi_od={c_rod}&"
-        "obdobi_do={c_rdo}&"
-        "stadium={c_std}&"
-        "t={c_clt}&"
-        "n={c_cln}&"
-        "m={c_clm}&"
-        "zije={c_cnd}&"
-        "umrti={c_dth}&"
-        "lecba="
-    )
     def __init__(self, filename: str | Path = None):
         if filename is None:
             filename = Path(__file__).parent / "cfg" / "opts.ini"
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
-        # obecne
-        self.pohlavi = []
-        self.zije = []
-        self.umrti = []
-        self.kraje = []
-        self.stadium = []
-        self.mkn = []
-
-        # roky
-        self.yearStart = 0
-        self.yearEnd = 0
-
-        # vek
-        self.vek = []
-
-        # tnm
-        self.t = []
-        self.n = []
-        self.m = []
-
     def load(self):
-        self.pohlavi.extend(self.cfg["obecne"]["pohlavi"].split(','))
-        self.zije.extend(self.cfg["obecne"]["zije"].split(','))
-        self.umrti.extend(self.cfg["obecne"]["umrti"].split(','))
-        self.kraje.extend(self.cfg["obecne"]["kraje"].split(','))
-        self.stadium.extend(self.cfg["obecne"]["stadium"].split(','))
-
-        self.yearStart = int(self.cfg["roky"]["start"])
-        self.yearEnd = int(self.cfg["roky"]["end"])
-
         a = int(self.cfg["vek"]["start"])
         b = int(self.cfg["vek"]["end"])
-        self.vek = list(range(a, b + 1))
-
-        self.t.extend(self.cfg["tnm"]["t"].split(','))
-        self.n.extend(self.cfg["tnm"]["n"].split(','))
-        self.m.extend(self.cfg["tnm"]["m"].split(','))
-
-        self.mkn = collect_mkn(self.cfg["mkn"]["C"], self.cfg["mkn"]["D"], self.cfg["mkn"]["special"])
-
-    def optIterator(self):
-        return product(self.pohlavi,
-                       self.mkn,
-                       self.vek,
-                       self.stadium,
-                       self.kraje,
-                       self.t,
-                       self.n,
-                       self.m,
-                       self.zije,
-                       self.umrti)
-
-    def getTaskCount(self):
-        return len(self.pohlavi) * \
-               len(self.mkn) * \
-               len(self.vek) * \
-               len(self.stadium) * \
-               len(self.kraje) * \
-               len(self.t) * \
-               len(self.n) * \
-               len(self.m) * \
-               len(self.zije) * \
-               len(self.umrti)
-
-    def _getUrlOpts(self, c):
-        opts = {
-            "c_mkn": c[1],
-            "c_gen": c[0],
-            "c_rgn": c[4],
-            "c_vek": c[2],
-            "c_rod": self.yearStart,
-            "c_rdo": self.yearEnd,
-            "c_std": c[3],
-            "c_clt": c[5],
-            "c_cln": c[6],
-            "c_clm": c[7],
-            "c_cnd": c[8],
-            "c_dth": c[9],
+        conf = {
+            "c_gen": self.cfg["obecne"]["pohlavi"].split(','),
+            "c_cnd": self.cfg["obecne"]["zije"].split(','),
+            "c_dth": self.cfg["obecne"]["umrti"].split(','),
+            "c_rgn": self.cfg["obecne"]["kraje"].split(','),
+            "c_std": self.cfg["obecne"]["stadium"].split(','),
+            "c_vek": list(range(a, b + 1)),
+            "c_clt": self.cfg["tnm"]["t"].split(','),
+            "c_cln": self.cfg["tnm"]["n"].split(','),
+            "c_clm": self.cfg["tnm"]["m"].split(','),
+            "c_mkn": collect_mkn(self.cfg["mkn"]["C"], self.cfg["mkn"]["D"], self.cfg["mkn"]["special"])
         }
-        return opts
+        return conf
 
-    def _getUrl(self, options: dict) -> str:
-        return self.url_tmpl.format(**options)
+    def url(self, conf: dict):
+        url_tmpl = (
+            "www.svod.cz/graph/?"
+            "sessid=slr1opn84pssncqr5hekcj6d87&"
+            "typ=incmor&"
+            "zobrazeni=table&"
+            "incidence=1&"
+            "mortalita=1&"
+            "mi=0&"
+            "vypocet=a&"
+            "lecba="
+        )
+        return "&".join([url_tmpl] + [f"{urlmap[key]}={val}" for key, val in conf.items()])
+
+    def iterator(self, conf: dict):
+        d = {
+            "c_rod": int(self.cfg["roky"]["start"]),
+            "c_rdo": int(self.cfg["roky"]["end"]),
+        }
+        gen = (
+            dict(zip(conf, x))
+            for x in product(*conf.values())
+        )
+        for o in gen:
+            od = o.pop("c_vek")
+            o["c_vdo"] = od
+            o["c_vod"] = od
+            yield dict(**o, **d)
+
 
