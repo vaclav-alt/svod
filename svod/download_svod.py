@@ -12,7 +12,7 @@ from shutil import copyfile
 
 import pandas as pd
 
-from svod.optmgr import OptMaster
+from svod.optmgr import OptMaster, urlmap
 from db import Database
 
 
@@ -32,16 +32,15 @@ class SvodMaster:
         self.opt.load()
 
     def download(self):
-        task_count = self.opt.getTaskCount()
+        task_count = len(self.opt)
         error = False
 
         error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
         with open(error_path, 'w', newline='') as logfile:
             i = 1
-            for x in self.opt.optIterator():
+            for opts in self.opt.iterator():
                 print("Stahování %d/%d..." % (i, task_count), end='')
-                opts = self.opt._getUrlOpts(x)
-                url = self.opt._getUrl(opts)
+                url = self.opt.url(opts)
 
                 try:
                     table = self._downloadYearTable(url)
@@ -50,7 +49,7 @@ class SvodMaster:
                     if not error:
                         header = list(opts.keys())
                         for i in range(len(header)):
-                            header[i] = self.opt.opt_names[header[i]]
+                            header[i] = urlmap[header[i]]
                         header.append("url")
                         csv_out.writerow(header)
                         error= True

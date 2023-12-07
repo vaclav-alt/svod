@@ -65,8 +65,7 @@ class TestOptMaster(unittest.TestCase):
             fp.close()
 
             opt = OptMaster(filename=fp.name)
-            conf = opt.load()
             url = "www.svod.cz/graph/?sessid=slr1opn84pssncqr5hekcj6d87&typ=incmor&zobrazeni=table&incidence=1&mortalita=1&mi=0&vypocet=a&lecba=&pohl=m&zije=&umrti=&kraj=&stadium=X&t=&n=&m=&diag=C50&vek_do=1&vek_od=1&obdobi_od=1978&obdobi_do=2016"
-            for x in opt.iterator(conf):
+            for x in opt.iterator():
                 self.assertEqual(opt.url(x), url)
                 break

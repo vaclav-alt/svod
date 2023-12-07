@@ -60,7 +60,6 @@ def collect_mkn(c_inp: str, d_inp: str, spec_inp: str) -> list[str]:
 urlmap = {
     "c_gen": "pohl",
     "c_mkn": "diag",
-    # "c_vek": "vek",
     "c_vod": "vek_od",
     "c_vdo": "vek_do",
     "c_std": "stadium",
@@ -102,6 +101,9 @@ class OptMaster:
         }
         return conf
 
+    def __len__(self):
+        return len(list(self.iterator()))
+
     def url(self, conf: dict):
         url_tmpl = (
             "www.svod.cz/graph/?"
@@ -116,7 +118,8 @@ class OptMaster:
         )
         return "&".join([url_tmpl] + [f"{urlmap[key]}={val}" for key, val in conf.items()])
 
-    def iterator(self, conf: dict):
+    def iterator(self):
+        conf = self.load()
         d = {
             "c_rod": int(self.cfg["roky"]["start"]),
             "c_rdo": int(self.cfg["roky"]["end"]),
