@@ -13,9 +13,29 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-
+from io import StringIO
 from svod.db import Database
 from svod.optmgr import OptMaster, urlmap
+
+
+def download_year_table(url: str) -> pd.DataFrame:
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ConnectionError(response.status_code)
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+    tables = pd.read_html(StringIO(str(soup)), encoding='Windows-1250')
+    df = tables[0].transpose()
+    headers = ["c_rok", "c_int", "c_inc"]
+
+    df1 = pd.DataFrame(df.values[1:, :3], columns=headers)
+    df2 = pd.DataFrame(df.values[1:, 4:7], columns=headers)
+
+    return pd.concat([df1, df2]).reset_index(drop=True)
+
+
+def process_table(table: pd.DataFrame) -> list[dict]:
+    return table.to_dict('records')
 
 
 class SvodMaster:
@@ -45,7 +65,7 @@ class SvodMaster:
                 url = self.opt.url(opts)
 
                 try:
-                    table = self._downloadYearTable(url)
+                    table = download_year_table(url)
                 except:
                     csv_out = csv.writer(logfile)
                     if not error:
@@ -94,30 +114,6 @@ class SvodMaster:
             return 2
         else:
             return "NULL"
-
-    def _parseSingleYearTable(self, tables):
-        df = tables[0].transpose()
-        df = pd.DataFrame(df.values[1:,4:])
-        return (df.values[0,0], df.values[0,1])
-
-    def _downloadYearTable(self, url):
-        tables = pd.read_html(url, skiprows=[3,7], encoding='Windows-1252')
-        df = tables[0].transpose()
-        headers = df.iloc[0,:3]
-
-        df1 = pd.DataFrame(df.values[1:,:3], columns=headers)
-        df2 = pd.DataFrame(df.values[1:,3:], columns=headers)
-
-        return pd.concat([df1, df2]).reset_index(drop=True)
-
-    def _processTable(self, table):
-        for index, row in table.iterrows():
-            rowDict = {
-                    "rok" : row['Rok'],
-                    "incidence" : row['Incidence'],
-                    "mortalita" : row['Mortalita']
-                    }
-            print(rowDict)
 
 
 def create_folder():
