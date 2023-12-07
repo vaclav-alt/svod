@@ -3,20 +3,19 @@
 Copyright [08/2023] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 '''
 
+import argparse
 import configparser
 import csv
 import os
 from datetime import datetime
-from math import isnan
-from shutil import copyfile
-import argparse
+from io import StringIO
 from pathlib import Path
-from bs4 import BeautifulSoup
-import requests
+from shutil import copyfile
 
 import pandas as pd
-from io import StringIO
-from svod.db import Database
+import requests
+from bs4 import BeautifulSoup
+
 from svod.optmgr import OptMaster, urlmap
 
 
@@ -47,10 +46,6 @@ class SvodMaster:
 
         self.wd = create_folder()
         copyfile(optsfile, os.path.join(self.wd, "opts.ini"))
-        dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
-
-        c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
-        self.db = Database(dbpath, c, c["database"]["tablename"])
 
         self.opt = OptMaster(os.path.join(self.wd, "opts.ini"))
         self.opt.load()
