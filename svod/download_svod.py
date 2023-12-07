@@ -91,22 +91,6 @@ class SvodMaster:
         input("Stisknutím klávesy Enter ukončíte chod programu")
 
 
-    def _changeFormats(self, opts):
-        opts["c_vek"] = self._vekFormat(opts["c_vek"])
-        opts["c_gen"] = self._pohlFormat(opts["c_gen"])
-
-    def _vekFormat(self, i):
-        return (int(i) - 1) * 5
-
-    def _pohlFormat(self, pohl):
-        if (pohl == "m"):
-            return 1
-        elif (pohl == "z"):
-            return 2
-        else:
-            return "NULL"
-
-
 def create_folder():
     mydir = os.path.join(
         os.getcwd(),
