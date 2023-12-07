@@ -106,7 +106,7 @@ class OptMaster:
 
     def url(self, conf: dict):
         url_tmpl = (
-            "www.svod.cz/graph/?"
+            "http://www.svod.cz/graph/?"
             "sessid=slr1opn84pssncqr5hekcj6d87&"
             "typ=incmor&"
             "zobrazeni=table&"
