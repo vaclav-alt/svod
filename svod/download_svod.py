@@ -9,20 +9,22 @@ import os
 from datetime import datetime
 from math import isnan
 from shutil import copyfile
+import argparse
+from pathlib import Path
 
 import pandas as pd
 
+from svod.db import Database
 from svod.optmgr import OptMaster, urlmap
-from db import Database
 
 
 class SvodMaster:
-    def __init__(self, filename):
+    def __init__(self, filename, optsfile):
         self.cfg = configparser.ConfigParser()
         self.cfg.read(filename)
 
         self.wd = create_folder()
-        copyfile("svod/cfg/opts.ini", os.path.join(self.wd, "opts.ini"))
+        copyfile(optsfile, os.path.join(self.wd, "opts.ini"))
         dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
         c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
@@ -127,7 +129,11 @@ def create_folder():
 
 
 def main():
-    svod = SvodMaster("svod/cfg/config.ini")
+    parser = argparse.ArgumentParser(prog="SVOD")
+    parser.add_argument("--config", default=Path(__file__).parent / "cfg" / "config.ini")
+    parser.add_argument("--opts", default=Path(__file__).parent / "cfg" / "opts.ini")
+    args = parser.parse_args()
+    svod = SvodMaster(args.config, args.opts)
     svod.download()
 
 
