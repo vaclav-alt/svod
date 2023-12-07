@@ -1,0 +1,10 @@
+[project]
+name = "svod"
+version = "1.1"
+authors = [
+    {name = "Václav Alt", email = "alt.vaclav@gmail.com"}
+]
+description = "This program serves to scrape epidemiological data that are made public (as the law dictates) but in a way, that is strangely uncomfortable to use."
+
+[project.scripts]
+download-svod="svod.download_svod:main"
