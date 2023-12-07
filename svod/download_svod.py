@@ -11,6 +11,8 @@ from math import isnan
 from shutil import copyfile
 import argparse
 from pathlib import Path
+from bs4 import BeautifulSoup
+import requests
 
 import pandas as pd
 from io import StringIO
@@ -58,9 +60,11 @@ class SvodMaster:
         error = False
 
         error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
-        with open(error_path, 'w', newline='') as logfile:
-            i = 1
-            for opts in self.opt.iterator():
+
+        with open(error_path, 'w', newline='') as logfile, \
+             open("results.csv", "w") as resfile:
+            res_out = csv.writer(resfile)
+            for i, opts in enumerate(self.opt.iterator(), start=1):
                 print("Stahování %d/%d..." % (i, task_count), end='')
                 url = self.opt.url(opts)
 
@@ -80,20 +84,12 @@ class SvodMaster:
                     csv_out.writerow(values)
                     continue
 
-                self._changeFormats(opts)
-                for index, row in table.iterrows():
-                    if isnan(row['Rok']):
-                        continue
-                    opts["c_rok"] = row['Rok']
-                    opts["c_inc"] = row['Incidence']
-                    opts["c_mor"] = row['Mortalita']
-
-                    self.db.save_to_db(opts)
-                self.db.db.commit()
+                records = process_table(table)
+                for record in records:
+                    tmp = dict(**opts, **record)
+                    res_out.writerow(tmp.values())
 
                 print("hotovo")
-                i += 1
-        self.db.write_csv(self.cfg["database"]["csv_filename"])
         if error:
             print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
 
