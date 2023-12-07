@@ -50,7 +50,7 @@ class SvodMaster:
         c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
         self.db = Database(dbpath, c, c["database"]["tablename"])
 
-        self.opt = OptMaster()
+        self.opt = OptMaster(os.path.join(self.wd, "opts.ini"))
         self.opt.load()
 
     def download(self):
