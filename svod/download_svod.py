@@ -22,7 +22,7 @@ class SvodMaster:
         self.cfg.read(filename)
 
         self.wd = create_folder()
-        copyfile("cfg/opts.ini", os.path.join(self.wd, "svod/cfg/opts.ini"))
+        copyfile("svod/cfg/opts.ini", os.path.join(self.wd, "opts.ini"))
         dbpath = os.path.join(self.wd, self.cfg["database"]["sql_filename"])
 
         c = {s: dict(self.cfg.items(s)) for s in self.cfg.sections()}
@@ -128,7 +128,7 @@ def create_folder():
 
 
 def main():
-    svod = SvodMaster("cfg/config.ini")
+    svod = SvodMaster("svod/cfg/config.ini")
     svod.download()
 
 
