@@ -6,7 +6,6 @@ Copyright [08/2023] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
 import argparse
 import configparser
 import csv
-import os
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -45,19 +44,20 @@ class SvodMaster:
         self.cfg.read(filename)
 
         self.wd = create_folder()
-        copyfile(optsfile, os.path.join(self.wd, "opts.ini"))
+        copyfile(optsfile, self.wd / "opts.ini")
 
-        self.opt = OptMaster(os.path.join(self.wd, "opts.ini"))
+        self.opt = OptMaster(self.wd / "opts.ini")
         self.opt.load()
 
     def download(self):
         task_count = len(self.opt)
         error = False
 
-        error_path = os.path.join(self.wd, self.cfg["database"]["error_filename"])
+        error_path = self.wd / self.cfg["database"]["error_filename"]
+        result_path = self.wd / "results.csv"
 
         with open(error_path, 'w', newline='') as logfile, \
-             open("results.csv", "w") as resfile:
+             open(result_path, "w") as resfile:
             res_out = csv.writer(resfile)
             for i, opts in enumerate(self.opt.iterator(), start=1):
                 print("Stahování %d/%d..." % (i, task_count), end='')
@@ -91,11 +91,9 @@ class SvodMaster:
         input("Stisknutím klávesy Enter ukončíte chod programu")
 
 
-def create_folder():
-    mydir = os.path.join(
-        os.getcwd(),
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    os.makedirs(mydir)
+def create_folder() -> Path:
+    mydir = Path.cwd() / datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    mydir.mkdir()
     return mydir
 
 
