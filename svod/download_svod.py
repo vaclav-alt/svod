@@ -30,8 +30,10 @@ def download_year_table(url: str) -> pd.DataFrame:
 
     df1 = pd.DataFrame(df.values[1:, :3], columns=headers)
     df2 = pd.DataFrame(df.values[1:, 4:7], columns=headers)
+    table = pd.concat([df1, df2]).reset_index(drop=True)
+    table = table.astype({c: int for c in headers})
 
-    return pd.concat([df1, df2]).reset_index(drop=True)
+    return table
 
 
 def process_table(table: pd.DataFrame) -> list[dict]:
