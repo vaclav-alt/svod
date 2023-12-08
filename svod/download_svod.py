@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
-'''
+"""
 Copyright [08/2023] Vaclav Alt, vaclav.alt@utf.mff.cuni.cz
-'''
+"""
 
 import argparse
 import configparser
@@ -53,32 +52,37 @@ class SvodMaster:
 
     def download(self):
         task_count = len(self.opt)
-        error = False
+
+        had_error = False
+        header_done = False
 
         error_path = self.wd / self.cfg["database"]["error_filename"]
         result_path = self.wd / "results.csv"
 
-        with open(error_path, 'w', newline='') as logfile, \
+        with open(error_path, 'w', newline='') as errfile, \
              open(result_path, "w") as resfile:
             res_out = csv.writer(resfile)
+            err_out = csv.writer(errfile)
+
             for i, opts in enumerate(self.opt.iterator(), start=1):
+                if not header_done:
+                    header = list(opts.keys())
+                    for j in range(len(header)):
+                        header[j] = urlmap[header[j]]
+                    res_out.writerow(header)
+                    header.append("url")
+                    err_out.writerow(header)
+                    header_done = True
+
                 print("Stahování %d/%d..." % (i, task_count), end='')
                 url = self.opt.url(opts)
 
                 try:
                     table = download_year_table(url)
                 except:
-                    csv_out = csv.writer(logfile)
-                    if not error:
-                        header = list(opts.keys())
-                        for i in range(len(header)):
-                            header[i] = urlmap[header[i]]
-                        header.append("url")
-                        csv_out.writerow(header)
-                        error= True
                     values = list(opts.values())
                     values.append(url)
-                    csv_out.writerow(values)
+                    err_out.writerow(values)
                     continue
 
                 records = process_table(table)
@@ -87,7 +91,7 @@ class SvodMaster:
                     res_out.writerow(tmp.values())
 
                 print("hotovo")
-        if error:
+        if had_error:
             print("Došlo k chybám. Pro konfigurace v errors.csv se nepodařilo stáhnout žádná data.")
 
         input("Stisknutím klávesy Enter ukončíte chod programu")
