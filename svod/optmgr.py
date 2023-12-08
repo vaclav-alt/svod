@@ -20,6 +20,19 @@ kraje = ["PHA", "STC", "JHC", "PLK", "KVK", "ULK", "LBK", "HKK", "PAK", "OLK", "
 mkn = ["C01"]
 '''
 
+URLBASE = "http://www.svod.cz/graph/"
+
+BASEOPTS = {
+    "sessid": "slr1opn84pssncqr5hekcj6d87",
+    "typ": "incmor",
+    "zobrazeni": "table",
+    "incidence": "1",
+    "mortalita": "1",
+    "mi": "0",
+    "vypocet": "a",
+    "lecba": ""
+}
+
 
 def parse_range(s: str) -> list[int]:
     numbers = []
@@ -105,18 +118,7 @@ class OptMaster:
         return len(list(self.iterator()))
 
     def url(self, conf: dict):
-        url_tmpl = (
-            "http://www.svod.cz/graph/?"
-            "sessid=slr1opn84pssncqr5hekcj6d87&"
-            "typ=incmor&"
-            "zobrazeni=table&"
-            "incidence=1&"
-            "mortalita=1&"
-            "mi=0&"
-            "vypocet=a&"
-            "lecba="
-        )
-        return "&".join([url_tmpl] + [f"{urlmap[key]}={val}" for key, val in conf.items()])
+        return "&".join([URLBASE] + [f"{urlmap[key]}={val}" for key, val in conf.items()])
 
     def iterator(self):
         conf = self.load()

@@ -14,11 +14,11 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from svod.optmgr import OptMaster, urlmap
+from svod.optmgr import OptMaster, urlmap, URLBASE, BASEOPTS
 
 
-def download_year_table(url: str) -> pd.DataFrame:
-    response = requests.get(url)
+def download_year_table(params: dict) -> pd.DataFrame:
+    response = requests.get(URLBASE, params=dict(**BASEOPTS, **params))
     if response.status_code != 200:
         raise ConnectionError(response.status_code)
 
@@ -78,7 +78,7 @@ class SvodMaster:
                 url = self.opt.url(opts)
 
                 try:
-                    table = download_year_table(url)
+                    table = download_year_table({urlmap[key]: val for key, val in opts.items()})
                 except:
                     values = list(opts.values())
                     values.append(url)

@@ -1,4 +1,4 @@
-from svod.download_svod import download_year_table
+from svod.download_svod import download_year_table, urlmap
 import unittest
 
 sample_table = {
@@ -16,28 +16,21 @@ sample_table = {
 
 class TestDownload(unittest.TestCase):
     def test_download(self):
-        url = (
-            "https://www.svod.cz/graph/?sessid=slr1opn84pssncqr5hekcj6d87"
-            "&typ=incmor"
-            "&zobrazeni=table"
-            "&incidence=1"
-            "&mortalita=1"
-            "&mi=0"
-            "&vypocet=a"
-            "&lecba="
-            "&pohl=m"
-            "&zije="
-            "&umrti="
-            "&kraj="
-            "&stadium="
-            "&t="
-            "&n="
-            "&m="
-            "&diag=C50"
-            "&vek_do=15"
-            "&vek_od=15"
-            "&obdobi_od=1978"
-            "&obdobi_do=2017"
-        )
-        table = download_year_table(url)
+        conf = {
+            "c_gen": "m",
+            "c_mkn": "C50",
+            "c_vod": "15",
+            "c_vdo": "15",
+            "c_std": "",
+            "c_rgn": "",
+            "c_clt": "",
+            "c_cln": "",
+            "c_clm": "",
+            "c_cnd": "",
+            "c_dth": "",
+            "c_rod": "1978",
+            "c_rdo": "2017",
+
+        }
+        table = download_year_table({urlmap[key]: val for key, val in conf.items()})
         self.assertDictEqual(table.to_dict(), sample_table)
